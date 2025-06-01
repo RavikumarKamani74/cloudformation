@@ -1,0 +1,63 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  # Create IAM Admin user
+  AdminUser:
+   Type: AWS::IAM::User
+   Properties:
+     UserName: RaviAdmin
+     ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/IAMFullAccess
+
+  # Dev1 user
+  Dev1User:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: Ravi
+      ManagedPolicyArns:
+       - !Ref S3AccessPolicy
+  
+  # S3 Customer Managed Policy
+  S3AccessPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: S3Access
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - "s3:PutObject"
+              - "s3:GetObject"
+              - "s3:ListAllMyBuckets"
+              - "s3:ListBucket"
+            Resource: "*"
+
+  # S3 Static Website Hosting
+  WebsiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: puzzleone
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        IgnorePublicAcls: false
+        BlockPublicPolicy: false
+        RestrictPublicBuckets: false
+      WebsiteConfiguration:
+        IndexDocument: mywebsite.html
+        
+
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref WebsiteBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: PublicRead
+            Effect: Allow
+            Principal: "*"
+            Action: "s3:GetObject"
+            Resource: !Sub "${WebsiteBucket.Arn}/*"
